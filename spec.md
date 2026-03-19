@@ -1,42 +1,31 @@
 # Dark House Survival
 
 ## Current State
-New project with no existing application files.
+A 2-player top-down survival horror game on a Canvas. Players move around a tile-based dark house map, avoid a roaming monster, hide in spots, and must both survive 5 hours. The view is top-down with flashlight cone overlays.
 
 ## Requested Changes (Diff)
 
 ### Add
-- Full 2-player top-down survival horror game running in the browser
-- Large multi-room dark house map (living room, hallways, bedrooms, kitchen, bathroom, basement)
-- Limited visibility via flashlight cone / dim ambient lighting per player
-- Player 1: WASD to move, F to hide/unhide
-- Player 2: Arrow keys to move, L to hide/unhide
-- Monster AI that patrols rooms, hunts players by proximity detection radius, becomes more aggressive each hour
-- Multiple hiding spots (closets, under beds, behind furniture) — entering one reduces monster detection radius
-- In-game clock: Hours 1-5, each hour = 15 real minutes (75 min total), countdown timer displayed
-- Win condition: both players survive until Hour 5 ends
-- Lose condition: monster catches both players (single player caught = eliminated but game continues)
-- Victory screen and game-over screen
-- Atmospheric dark visual style — deep blues, blacks, dim flashlight cones
-- Sound descriptions shown in UI ("Floor creaks...", "You hear footsteps...")
-- Canvas-based game loop using requestAnimationFrame
-- Collision detection for walls, doors, hiding spots
+- First-person raycasting perspective (split-screen: P1 on left half, P2 on right half)
+- Jumpscare effect when the monster catches a player: full-screen red flash, distorted monster face overlay, screen shake, scary text
+- Revive mechanic: when a player is downed (caught), they become incapacitated on the ground instead of instantly dead. The other player can press E (P1) or K (P2) when near the downed player to revive them over ~3 seconds. Show a revive progress bar. Only trigger game over if both are down simultaneously.
 
 ### Modify
-N/A
+- Rendering: replace top-down canvas draw with raycasting first-person renderer split into two half-screen viewports
+- Player state: add `downed` state distinct from `alive: false`. Downed players stay at their position, can be seen as a body on the floor in first-person view. Monster can re-catch a downed player (instant game over for that player).
+- Controls HUD: update to show revive key hints (E / K) when near a downed teammate
+- Game over: only when all players are dead (not just downed). A downed player who is not revived in time (30 seconds) also dies.
+- Victory: requires at least one alive (not just downed) player surviving 5 hours
 
 ### Remove
-N/A
+- Top-down map draw function
+- Per-player flashlight cone in 2D
 
 ## Implementation Plan
-1. Build canvas-based game engine with game loop, input handling, collision system
-2. Design house map as a tile/room grid with walls, doors, furniture, hiding spots
-3. Implement player entities with movement, flashlight cone rendering, hide state
-4. Implement monster entity with patrol AI, line-of-sight detection, aggression scaling by hour
-5. Implement hiding spot logic — reduces monster detection radius when occupied
-6. Implement game clock: 15-min hour cycles, hour counter 1-5
-7. Render dark scene with dim lighting and flashlight cone overlay using canvas compositing
-8. HUD: hour display, countdown timer, player status indicators
-9. Win/lose/game-over screens
-10. Atmospheric text notifications (sound descriptions)
-11. Minimal Motoko backend (stub actor)
+1. Implement raycasting engine for first-person rendering (wall detection from MAP, floor/ceiling gradient, sprite rendering for monster and downed players)
+2. Split canvas into two equal viewports (left = P1 POV, right = P2 POV)
+3. Render each viewport using raycasting from that player's position/angle
+4. Add jumpscare system: state flag `jumpscareActive`, `jumpscareTimer`, triggered on monster catch; renders fullscreen horror overlay with flash and monster face using canvas
+5. Change player death flow: caught → downed (timer starts), near teammate + hold revive key → revive progress bar, timer expires → truly dead
+6. Update HUD for split-screen (each side shows its own player status, revive hint)
+7. Update controls documentation
